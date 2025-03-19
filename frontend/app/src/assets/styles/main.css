@@ -1,0 +1,43 @@
+@font-face {
+	font-family: "Rye";
+	src: url("../fonts/Rye-Regular.ttf") format("truetype");
+	font-weight: normal;
+	font-style: normal;
+}
+
+body {
+	font-family: "Rye", sans-serif;
+	justify-content: center;
+	align-items: center;
+}
+
+.app-background {
+	position: fixed; /* Fixed position to cover the entire viewport */
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-image: url("../images/background.webp");
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-attachment: fixed;
+
+	/* background-color: rgba(0, 0, 0, var(--opacity-bgffd)); */
+
+	/* Keep it behind the content */
+	/* z-index: -1; */
+
+	/* Smooth transition for opacity */
+	/* transition: background-color 0.2s ease; */
+
+  /*
+    Container global color = backgroundColor: "rgba(13, 81, 79, 0.5)"
+    style={{ backgroundColor: "rgba(13, 81, 79, 0.5)" }}
+    
+    Typo exceptionnal color = color: "#eef7ff"
+    style={{ color: "#eef7ff" }}
+
+    To put back if we decide to have default Container color = bg-light
+ */
+}

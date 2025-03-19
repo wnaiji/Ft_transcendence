@@ -1,0 +1,128 @@
+services:
+    ganache:
+        container_name: ganache
+        image: trufflesuite/ganache:latest
+        ports:
+            - "8545:8545"
+        command:
+            - --deterministic
+            - --networkId=1337
+            - --chain.vmErrorsOnRPCResponse=true
+            - --chain.asyncRequestProcessing=false
+            - --miner.blockTime=0
+        networks:
+            - transcendence-network
+
+    hardhat:
+        container_name: hardhat
+        build:
+            context: ./hardhat
+            dockerfile: Dockerfile
+        restart: on-failure
+        depends_on:
+            - ganache
+        environment:
+            - HARDHAT_PRIVATE_KEY=${HARDHAT_PRIVATE_KEY}
+        volumes:
+            # - ./hardhat/app:/app
+            - /app/node_modules/
+            - crypto_volume:/crypto_volume
+        networks:
+            - transcendence-network
+
+    db:
+        container_name: db
+        image: postgres:17.2-bookworm
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - postgres_volume:/var/lib/postgresql/data
+        networks:
+            - transcendence-network
+
+    backend:
+        container_name: backend
+        build: ./backend
+        volumes:
+            - ./backend/app:/app
+            - media_volume:/var/www/media/
+            - crypto_volume:/crypto_volume
+        ports:
+            - 8000
+        environment:
+            DJANGO_SETTINGS_MODULE: transcendence_backend.settings
+            BACKEND_DEBUG: ${BACKEND_DEBUG}
+            BACKEND_SECRET_KEY: ${BACKEND_SECRET_KEY}
+            BACKEND_ALLOWED_HOSTS: ${BACKEND_ALLOWED_HOSTS}
+            BACKEND_POSTGRES_DB: ${DB_NAME}
+            BACKEND_POSTGRES_USER: ${DB_USER}
+            BACKEND_POSTGRES_PASSWORD: ${DB_PASSWORD}
+            ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+            OAUTH_SECRET: ${OAUTH_SECRET}
+            OAUTH_KEY: ${OAUTH_KEY}
+            OAUTH_AUTHORIZE_URL: ${OAUTH_AUTHORIZE_URL}
+            OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
+            OAUTH_SCOPE: ${OAUTH_SCOPE}
+            OAUTH_REDIRECT_LOGIN: ${OAUTH_REDIRECT_LOGIN}
+            WEB3_PROVIDER: ${WEB3_PROVIDER}
+            ETHEREUM_PRIVATE_KEY: ${ETHEREUM_PRIVATE_KEY}
+            OAUTH_ME: ${OAUTH_ME}
+            OAUTH_TOKEN_URL: ${OAUTH_TOKEN_URL}
+        depends_on:
+            - db
+            - hardhat
+            - ganache
+        networks:
+            - transcendence-network
+
+    frontend:
+        container_name: frontend
+        build: ./frontend
+        volumes:
+            # - ./frontend/app:/app
+            - /app/node_modules
+        ports:
+            - 5173
+        depends_on:
+            - backend
+            - db
+        networks:
+            - transcendence-network
+
+    adminer:
+        container_name: adminer
+        image: adminer
+        ports:
+            - "8080:8080"
+        networks:
+            - transcendence-network
+        depends_on:
+            - db
+
+    nginx:
+        container_name: nginx
+        build: ./nginx
+        volumes:
+            - media_volume:/var/www/media/
+        ports:
+            - "8443:8443"
+            - "5173:443"
+        environment:
+            - NGINX_HOST=${NGINX_HOST}
+        networks:
+            - transcendence-network
+        depends_on:
+            - frontend
+            - backend
+
+networks:
+    transcendence-network:
+        name: transcendence-network
+        driver: bridge # by default is already bridge
+
+volumes:
+    crypto_volume:
+    postgres_volume:
+    media_volume:
